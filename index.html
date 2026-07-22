@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄钟</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: #16213e;
+            border-radius: 24px;
+            padding: 40px;
+            width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 30px;
+            color: #e94560;
+            font-weight: 600;
+        }
+
+        .mode-switch {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .mode-btn {
+            padding: 8px 24px;
+            border: 2px solid #e94560;
+            border-radius: 20px;
+            background: transparent;
+            color: #e94560;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .mode-btn.active {
+            background: #e94560;
+            color: #fff;
+        }
+
+        .mode-btn:hover {
+            background: #e94560;
+            color: #fff;
+        }
+
+        .timer-ring {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            margin: 0 auto 30px;
+        }
+
+        .timer-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .timer-ring .bg {
+            fill: none;
+            stroke: #2a2a4a;
+            stroke-width: 8;
+        }
+
+        .timer-ring .progress {
+            fill: none;
+            stroke: #e94560;
+            stroke-width: 8;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .timer-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 2px;
+        }
+
+        .timer-text span {
+            display: block;
+            font-size: 14px;
+            color: #888;
+            margin-top: 8px;
+            font-weight: 400;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .ctrl-btn {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #e94560;
+            color: #fff;
+            min-width: 100px;
+        }
+
+        .ctrl-btn:hover {
+            background: #d63851;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(233, 69, 96, 0.4);
+        }
+
+        .ctrl-btn.reset {
+            background: #2a2a4a;
+        }
+
+        .ctrl-btn.reset:hover {
+            background: #3a3a5a;
+        }
+
+        .sound-section {
+            margin-bottom: 20px;
+        }
+
+        .sound-section h3 {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 12px;
+            font-weight: 400;
+        }
+
+        .sound-btns {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .sound-btn {
+            padding: 8px 20px;
+            border: 2px solid #2a2a4a;
+            border-radius: 20px;
+            background: transparent;
+            color: #aaa;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .sound-btn.active {
+            border-color: #e94560;
+            color: #e94560;
+            background: rgba(233, 69, 96, 0.1);
+        }
+
+        .sound-btn:hover {
+            border-color: #e94560;
+            color: #e94560;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #2a2a4a;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-item .num {
+            font-size: 24px;
+            font-weight: 700;
+            color: #e94560;
+        }
+
+        .stat-item .label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                width: 340px;
+                padding: 24px;
+            }
+            .timer-ring {
+                width: 220px;
+                height: 220px;
+            }
+            .timer-text {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍅 番茄钟</h1>
+
+        <div class="mode-switch">
+            <button class="mode-btn active" data-mode="work">工作</button>
+            <button class="mode-btn" data-mode="break">休息</button>
+        </div>
+
+        <div class="timer-ring">
+            <svg width="260" height="260" viewBox="0 0 260 260">
+                <circle class="bg" cx="130" cy="130" r="110"/>
+                <circle class="progress" id="progress" cx="130" cy="130" r="110"
+                    stroke-dasharray="691.15" stroke-dashoffset="0"/>
+            </svg>
+            <div class="timer-text" id="timerDisplay">25:00<span>剩余时间</span></div>
+        </div>
+
+        <div class="controls">
+            <button class="ctrl-btn" id="startBtn">开始</button>
+            <button class="ctrl-btn reset" id="resetBtn">重置</button>
+        </div>
+
+        <div class="sound-section">
+            <h3>白噪音</h3>
+            <div class="sound-btns">
+                <button class="sound-btn" data-sound="none">关闭</button>
+                <button class="sound-btn active" data-sound="rain">🌧 雨声</button>
+                <button class="sound-btn" data-sound="ocean">🌊 海浪</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="num" id="todayCount">0</div>
+                <div class="label">今日完成</div>
+            </div>
+            <div class="stat-item">
+                <div class="num" id="totalCount">0</div>
+                <div class="label">总计</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Audio Engine
+        class AudioEngine {
+            constructor() {
+                this.ctx = null;
+                this.source = null;
+                this.gain = null;
+                this.currentSound = 'rain';
+                this.initialized = false;
+            }
+
+            init() {
+                if (this.initialized) return;
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.gain = this.ctx.createGain();
+                this.gain.gain.value = 0.3;
+                this.gain.connect(this.ctx.destination);
+                this.initialized = true;
+            }
+
+            createRain() {
+                const bufferSize = this.ctx.sampleRate * 2;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                return buffer;
+            }
+
+            createOcean() {
+                const bufferSize = this.ctx.sampleRate * 4;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                let phase = 0;
+                for (let i = 0; i < bufferSize; i++) {
+                    phase += 0.5 / this.ctx.sampleRate;
+                    const noise = Math.random() * 2 - 1;
+                    const wave = Math.sin(2 * Math.PI * 0.3 * i / this.ctx.sampleRate) * 0.5;
+                    data[i] = noise * 0.3 + wave * 0.7;
+                }
+                return buffer;
+            }
+
+            play(soundType) {
+                this.stop();
+                if (soundType === 'none') return;
+
+                this.init();
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+
+                let buffer;
+                if (soundType === 'rain') {
+                    buffer = this.createRain();
+                } else if (soundType === 'ocean') {
+                    buffer = this.createOcean();
+                }
+
+                this.source = this.ctx.createBufferSource();
+                this.source.buffer = buffer;
+                this.source.loop = true;
+                this.source.connect(this.gain);
+                this.source.start();
+                this.currentSound = soundType;
+            }
+
+            stop() {
+                if (this.source) {
+                    this.source.stop();
+                    this.source.disconnect();
+                    this.source = null;
+                }
+            }
+
+            setVolume(vol) {
+                if (this.gain) {
+                    this.gain.gain.value = Math.max(0, Math.min(1, vol));
+                }
+            }
+        }
+
+        // State
+        const state = {
+            mode: 'work',
+            timeLeft: 25 * 60,
+            isRunning: false,
+            soundType: 'rain',
+            workTime: 25 * 60,
+            breakTime: 5 * 60,
+            todayCount: parseInt(localStorage.getItem('pomodoro_today') || '0'),
+            totalCount: parseInt(localStorage.getItem('pomodoro_total') || '0'),
+            intervalId: null,
+            lastDate: localStorage.getItem('pomodoro_date') || ''
+        };
+
+        // DOM refs
+        const timerDisplay = document.getElementById('timerDisplay');
+        const progressRing = document.getElementById('progress');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const todayCountEl = document.getElementById('todayCount');
+        const totalCountEl = document.getElementById('totalCount');
+        const modeBtns = document.querySelectorAll('.mode-btn');
+        const soundBtns = document.querySelectorAll('.sound-btn');
+
+        const audio = new AudioEngine();
+        const circumference = 691.15;
+
+        // Check date reset
+        function checkDateReset() {
+            const today = new Date().toDateString();
+            if (state.lastDate !== today) {
+                state.todayCount = 0;
+                state.lastDate = today;
+                localStorage.setItem('pomodoro_date', today);
+                localStorage.setItem('pomodoro_today', '0');
+            }
+        }
+
+        // Update display
+        function updateDisplay() {
+            const mins = Math.floor(state.timeLeft / 60);
+            const secs = state.timeLeft % 60;
+            timerDisplay.innerHTML = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}<span>${state.mode === 'work' ? '工作中' : '休息中'}</span>`;
+
+            const totalTime = state.mode === 'work' ? state.workTime : state.breakTime;
+            const offset = circumference * (1 - state.timeLeft / totalTime);
+            progressRing.style.strokeDashoffset = offset;
+
+            todayCountEl.textContent = state.todayCount;
+            totalCountEl.textContent = state.totalCount;
+        }
+
+        // Notification
+        function sendNotification(title, body) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, { body, icon: '🍅' });
+            } else if ('Notification' in window && Notification.permission !== 'denied') {
+                Notification.requestPermission().then(perm => {
+                    if (perm === 'granted') {
+                        new Notification(title, { body, icon: '🍅' });
+                    }
+                });
+            }
+        }
+
+        // Timer end
+        function onTimerEnd() {
+            state.isRunning = false;
+            startBtn.textContent = '开始';
+            if (state.intervalId) {
+                clearInterval(state.intervalId);
+                state.intervalId = null;
+            }
+
+            if (state.mode === 'work') {
+                state.todayCount++;
+                state.totalCount++;
+                localStorage.setItem('pomodoro_today', String(state.todayCount));
+                localStorage.setItem('pomodoro_total', String(state.totalCount));
+                sendNotification('番茄钟完成！', '干得漂亮！休息一下吧 🎉');
+            } else {
+                sendNotification('休息结束', '该继续工作了 💪');
+            }
+
+            // Auto switch mode
+            state.mode = state.mode === 'work' ? 'break' : 'work';
+            state.timeLeft = state.mode === 'work' ? state.workTime : state.breakTime;
+            updateModeUI();
+            updateDisplay();
+        }
+
+        // Timer tick
+        function tick() {
+            state.timeLeft--;
+            updateDisplay();
+
+            if (state.timeLeft <= 0) {
+                onTimerEnd();
+            }
+        }
+
+        // Start
+        function startTimer() {
+            if (state.isRunning) {
+                // Pause
+                state.isRunning = false;
+                startBtn.textContent = '继续';
+                if (state.intervalId) {
+                    clearInterval(state.intervalId);
+                    state.intervalId = null;
+                }
+                audio.stop();
+                return;
+            }
+
+            // Start
+            if (state.timeLeft <= 0) {
+                state.timeLeft = state.mode === 'work' ? state.workTime : state.breakTime;
+            }
+
+            state.isRunning = true;
+            startBtn.textContent = '暂停';
+
+            if (state.intervalId) clearInterval(state.intervalId);
+            state.intervalId = setInterval(tick, 1000);
+
+            // Play sound
+            if (state.soundType !== 'none') {
+                audio.play(state.soundType);
+            }
+        }
+
+        // Reset
+        function resetTimer() {
+            state.isRunning = false;
+            startBtn.textContent = '开始';
+            if (state.intervalId) {
+                clearInterval(state.intervalId);
+                state.intervalId = null;
+            }
+            audio.stop();
+            state.timeLeft = state.mode === 'work' ? state.workTime : state.breakTime;
+            updateDisplay();
+        }
+
+        // Mode switch
+        function switchMode(mode) {
+            if (state.isRunning) {
+                audio.stop();
+                if (state.intervalId) {
+                    clearInterval(state.intervalId);
+                    state.intervalId = null;
+                }
+                state.isRunning = false;
+                startBtn.textContent = '开始';
+            }
+            state.mode = mode;
+            state.timeLeft = mode === 'work' ? state.workTime : state.breakTime;
+            updateModeUI();
+            updateDisplay();
+        }
+
+        function updateModeUI() {
+            modeBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === state.mode);
+            });
+        }
+
+        // Sound switch
+        function switchSound(type) {
+            state.soundType = type;
+            soundBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.sound === type);
+            });
+            if (state.isRunning) {
+                audio.play(type);
+            }
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startTimer);
+        resetBtn.addEventListener('click', resetTimer);
+
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                switchMode(btn.dataset.mode);
+            });
+        });
+
+        soundBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                switchSound(btn.dataset.sound);
+            });
+        });
+
+        // Init
+        checkDateReset();
+        updateDisplay();
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                startTimer();
+            }
+            if (e.code === 'KeyR') {
+                resetTimer();
+            }
+        });
+    </script>
+</body>
+</html>
